@@ -13,6 +13,6 @@ python main.py \
    --epochs 5 \
    --logging_step 500 \
    --seed 0 \
-   --gpuid 0 1 
+   --gpuid 0 1
 
    # text1=text2, forwarding the same instance twice

@@ -72,7 +72,9 @@ def get_args(argv):
     parser.add_argument('--bert', type=str, default='robertabase', help="")
     parser.add_argument('--temperature', type=float, default=0.05, help="temperature required by contrastive loss")
     parser.add_argument('--topk', type=int, default=16, help=" ")
-    parser.add_argument('--eps', type=float, default=15, help=" ")
+    parser.add_argument('--eps', type=float, default=1, help=" ")
+    parser.add_argument('--xi', type=int, default=1, help=" ")
+    parser.add_argument('--advk', type=int, default=1, help=" ")
     
     args = parser.parse_args(argv)
     args.use_gpu = args.gpuid[0] >= 0

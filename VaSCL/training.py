@@ -25,13 +25,15 @@ class VaSCL_Trainer(nn.Module):
         self.args = args
         self.temperature = self.args.temperature
         self.eps = self.args.eps
+        self.xi = self.args.xi 
+        self.advk = self.args.advk 
         self.topk = self.args.topk
         
         self.paircon_loss = ContrastiveLoss(temperature=self.temperature, topk=self.topk).cuda()
         
         self.uni_criterion = VaSCL_NUniDir(temperature=self.temperature).cuda()
         self.bi_criterion = VaSCL_NBiDir(temperature=self.temperature).cuda()
-        self.perturb_embd = VaSCL_Pturb(xi=self.eps, eps=self.eps, uni_criterion=self.uni_criterion, bi_criterion=self.bi_criterion).cuda()
+        self.perturb_embd = VaSCL_Pturb(xi=self.xi, eps=self.eps, ip=self.advk, uni_criterion=self.uni_criterion, bi_criterion=self.bi_criterion).cuda()
         
         self.gstep = 0
         self.dev_objective = -np.inf
