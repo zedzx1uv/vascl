@@ -6,13 +6,17 @@ python main.py \
    --dataname wiki1m_for_simcse \
    --text1 text \
    --text2 text \
-   --bert robertabase \
+   --bert bertbase \
    --lr 5e-06 \
    --lr_scale 100000 \
    --batch_size 256 \
    --epochs 5 \
-   --logging_step 500 \
+   --logging_step 200 \
    --seed 0 \
-   --gpuid 0 1
+   --gpuid 0 \
+   --advk 1 \
+   --eps 15 \
+   --xi 15 
+
 
    # text1=text2, forwarding the same instance twice
