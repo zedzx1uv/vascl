@@ -1,4 +1,5 @@
-python main.py \
+  # CUDA_VISIBLE_DEVICES=1
+  python main.py \
    --resdir ../results/vascl/  \
    --devset sts-b \
    --path_sts_data /mnt/rao/home/zb/SimCSE-main/SentEval/data \
@@ -9,12 +10,12 @@ python main.py \
    --bert bertbase \
    --lr 5e-06 \
    --lr_scale 100000 \
-   --batch_size 256 \
+   --batch_size 200 \
    --epochs 5 \
    --logging_step 200 \
    --seed 0 \
-   --gpuid 0 \
-   --advk 1 \
+   --gpuid 0 1 \
+   --advk 30 \
    --eps 15 \
    --xi 15 
 
