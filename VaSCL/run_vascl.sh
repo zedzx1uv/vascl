@@ -2,8 +2,8 @@
   python main.py \
    --resdir ../results/vascl/  \
    --devset sts-b \
-   --path_sts_data /mnt/rao/home/zb/SimCSE-main/SentEval/data \
-   --datapath /mnt/rao/home/zb/SimCSE-main/data \
+   --path_sts_data /media/rao/Disk-1/home/zb/SimCSE/SentEval/data \
+   --datapath /media/rao/Disk-1/home/zb/SimCSE/data \
    --dataname wiki1m_for_simcse \
    --text1 text \
    --text2 text \
