@@ -142,7 +142,8 @@ class VaSCL_Trainer(nn.Module):
         losses = self.paircon_loss(feat1, feat2)
         loss = losses['loss']
         losses['vcl_loss'] = loss.item()
-
+        loss.backward()
+        
         input_ids_1, input_ids_2 = torch.unbind(input_ids, dim=1)
         attention_mask_1, attention_mask_2 = torch.unbind(attention_mask, dim=1) 
 
@@ -167,11 +168,11 @@ class VaSCL_Trainer(nn.Module):
             inputs_embeds_1 = delta + embeds_init_1
             inputs_embeds_2 = embeds_init_2
             feat1, feat2 = self.model((inputs_embeds_1,inputs_embeds_2),(attention_mask_1, attention_mask_2),freelb=True)
-            losses = self.paircon_loss(feat1, feat2)
-            loss = losses['loss']
-            loss = loss.mean()
-            losses['adv_loss'] = loss.item()
-            loss.backward()
+            adv_losses = self.paircon_loss(feat1, feat2)
+            adv_loss = adv_losses['loss']
+            adv_loss = adv_loss.mean()
+            losses['adv_loss'] = adv_loss.item()
+            adv_loss.backward()
             delta_grad = delta.grad.clone().detach()
             if self.adv_norm_type == "l2":
                 denorm = torch.norm(delta_grad.view(delta_grad.size(0), -1), dim=1).view(-1, 1, 1)

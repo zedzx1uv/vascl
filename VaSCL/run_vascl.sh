@@ -12,7 +12,7 @@ python main.py \
    --lr_scale 100000 \
    --batch_size 128 \
    --epochs 5 \
-   --logging_step 200 \
+   --logging_step 1 \
    --seed 3407 \
    --gpuid 0 1 \
    --advk 30 \
