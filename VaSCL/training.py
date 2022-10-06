@@ -7,7 +7,7 @@ import torch.nn as nn
 from learners.contrastive_utils import ContrastiveLoss, VaSCL_NUniDir, VaSCL_NBiDir
 from learners.vat_utils import VaSCL_Pturb, FreeLB 
 from utils.utils import statistics_log
-
+from tqdm import tqdm 
 # Set PATHs
 PATH_SENTEVAL = '../DownstreamEval/SentEval'
 PATH_TO_DATA = '../DownstreamEval/SentEval/data'
@@ -84,7 +84,7 @@ class VaSCL_Trainer(nn.Module):
 
         self.model.train()
         for epoch in range(self.args.epochs):
-            for j, batch in enumerate(self.train_loader):
+            for j, batch in tqdm(enumerate(self.train_loader)):
 
                 input_ids, attention_mask = self.prepare_pairwise_input(batch)
                 
@@ -170,6 +170,7 @@ class VaSCL_Trainer(nn.Module):
             feat1, feat2 = self.model((inputs_embeds_1,inputs_embeds_2),(attention_mask_1, attention_mask_2),freelb=True)
             adv_losses = self.paircon_loss(feat1, feat2)
             adv_loss = adv_losses['loss']
+            adv_loss /= self.advk 
             adv_loss = adv_loss.mean()
             losses['adv_loss'] = adv_loss.item()
             adv_loss.backward()
