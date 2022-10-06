@@ -11,11 +11,11 @@ python main.py \
    --lr 5e-06 \
    --lr_scale 100000 \
    --batch_size 128 \
-   --epochs 5 \
-   --logging_step 1 \
+   --epochs 1 \
+   --logging_step 500 \
    --seed 3407 \
    --gpuid 0 1 \
-   --advk 30 \
+   --advk 10 \
    --freelb 
 
 
