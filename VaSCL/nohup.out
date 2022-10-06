@@ -1,0 +1,26 @@
+Some weights of the model checkpoint at bert-base-uncased were not used when initializing VaSCL_BERT: ['cls.predictions.transform.LayerNorm.bias', 'cls.predictions.transform.dense.weight', 'cls.seq_relationship.bias', 'cls.predictions.bias', 'cls.predictions.transform.dense.bias', 'cls.predictions.decoder.weight', 'cls.predictions.transform.LayerNorm.weight', 'cls.seq_relationship.weight']
+- This IS expected if you are initializing VaSCL_BERT from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing VaSCL_BERT from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of VaSCL_BERT were not initialized from the model checkpoint at bert-base-uncased and are newly initialized: ['contrast_head.0.weight', 'contrast_head.2.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+results path: ../results/vascl/VaSCL.bertbase.wiki1m_for_simcse.text.text.tmp0.05.topk16.eps1.0.advk50.lr5e-06.lrscale100000.bs256.seed0/
+Let's use GPU cuda:0 [0, 1]
+load data: /media/rao/Disk-1/home/zb/SimCSE/data/wiki1m_for_simcse.csv
+-----Initializing VaSCL_BERT-----
+
+ PosConLoss with temperature=0.05, 	 topk=16
+
+
+ VaSCL_NUniDir 
+
+
+ VaSCL_NBiDir 
+
+
+ VaSCL_Pturb on embeddings, xi:1, eps:1.0 
+
+
+Initializing VaSCL_Trainer 
+
+
+=19535/3907=Iterations/Batches

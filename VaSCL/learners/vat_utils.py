@@ -55,7 +55,7 @@ class VaSCL_Pturb(nn.Module):
         # prepare random unit tensor
         d = torch.rand(inputs.shape).sub(0.5).to(inputs.device)
         d = _l2_normalize(d)
-        
+    
         with _disable_tracking_bn_stats(model):
             # calc adversarial direction
             for _ in range(self.ip):
@@ -66,7 +66,8 @@ class VaSCL_Pturb(nn.Module):
                 adv_distance = adv_cnst['lds_loss']
 
                 adv_distance.backward(retain_graph=True)
-                d = _l2_normalize(d.grad)
+                d_grad = d.grad.clone().detach()
+                d = (d + _l2_normalize(d.grad) * 1e-2).detach() # adv_lr
                 model.zero_grad()
 
         cnst_hat = model.module.contrast_logits(inputs+self.eps*d)
