@@ -17,10 +17,10 @@ class VaSCL_RoBERTa(RobertaPreTrainedModel):
             nn.ReLU(inplace=True),
             nn.Linear(self.emb_size, self.feat_dim, bias=False))
 
-    def forward(self, input_ids, attention_mask, topk=16, task_type="train"):
+    def forward(self, input_ids, attention_mask, topk=16, task_type="train", freelb=False):
         if task_type == "evaluate":
             return self.get_mean_embeddings(input_ids, attention_mask)
-        else:
+        elif not freelb:
             input_ids_1, input_ids_2 = torch.unbind(input_ids, dim=1)
             attention_mask_1, attention_mask_2 = torch.unbind(attention_mask, dim=1) 
             
@@ -37,12 +37,32 @@ class VaSCL_RoBERTa(RobertaPreTrainedModel):
 
             cnst_feat1, cnst_feat2 = self.contrast_logits(mean_output_1, mean_output_2)
             return mean_output_1, hard_indices, cnst_feat1, cnst_feat2
+        else:
+            inputs_embeds_1, inputs_embeds_2 = input_ids # 元组
+            attention_mask_1, attention_mask_2 = attention_mask
+            mean_output_with_input_embeds_1 = self.input_with_embeds(inputs_embeds_1, attention_mask_1)
+            mean_output_with_input_embeds_2 = self.input_with_embeds(inputs_embeds_2, attention_mask_2)
+            
+            cnst_feat1, cnst_feat2 = self.contrast_logits(mean_output_with_input_embeds_1, mean_output_with_input_embeds_2)
+            return cnst_feat1, cnst_feat2
     
     def get_mean_embeddings(self, input_ids, attention_mask):
         bert_output = self.roberta.forward(input_ids=input_ids, attention_mask=attention_mask)
         attention_mask = attention_mask.unsqueeze(-1)
         mean_output = torch.sum(bert_output[0]*attention_mask, dim=1) / torch.sum(attention_mask, dim=1)
         return mean_output
+
+    def get_init_embeddings(self, input_ids, attention_mask):
+        embeds_init = self.roberta.embeddings.word_embeddings(input_ids)
+        return embeds_init
+
+    def input_with_embeds(self, inputs_embeds, attention_mask):
+        bert_output = self.roberta.forward(inputs_embeds=inputs_embeds, attention_mask=attention_mask)
+        attention_mask = attention_mask.unsqueeze(-1)
+        mean_output = torch.sum(bert_output[0]*attention_mask, dim=1) / torch.sum(attention_mask, dim=1)
+        return mean_output
+
+
      
     def contrast_logits(self, embd1, embd2=None):
         feat1 = F.normalize(self.contrast_head(embd1), dim=1)
@@ -66,10 +86,10 @@ class VaSCL_BERT(BertPreTrainedModel):
             nn.ReLU(inplace=True),
             nn.Linear(self.emb_size, self.feat_dim, bias=False))
 
-    def forward(self, input_ids, attention_mask, topk=16, task_type="train"):
+    def forward(self, input_ids, attention_mask, topk=16, task_type="train", freelb=False):
         if task_type == "evaluate":
             return self.get_mean_embeddings(input_ids, attention_mask)
-        else:
+        elif not freelb:
             input_ids_1, input_ids_2 = torch.unbind(input_ids, dim=1)
             attention_mask_1, attention_mask_2 = torch.unbind(attention_mask, dim=1)
 
@@ -85,9 +105,27 @@ class VaSCL_BERT(BertPreTrainedModel):
 
             cnst_feat1, cnst_feat2 = self.contrast_logits(mean_output_1, mean_output_2)
             return mean_output_1, hard_indices_unidir, cnst_feat1, cnst_feat2
+        else:
+            inputs_embeds_1, inputs_embeds_2 = input_ids # 元组
+            attention_mask_1, attention_mask_2 = attention_mask
+            mean_output_with_input_embeds_1 = self.input_with_embeds(inputs_embeds_1, attention_mask_1)
+            mean_output_with_input_embeds_2 = self.input_with_embeds(inputs_embeds_2, attention_mask_2)
+            
+            cnst_feat1, cnst_feat2 = self.contrast_logits(mean_output_with_input_embeds_1, mean_output_with_input_embeds_2)
+            return cnst_feat1, cnst_feat2 
 
     def get_mean_embeddings(self, input_ids, attention_mask):
         bert_output = self.bert.forward(input_ids=input_ids, attention_mask=attention_mask)
+        attention_mask = attention_mask.unsqueeze(-1)
+        mean_output = torch.sum(bert_output[0]*attention_mask, dim=1) / torch.sum(attention_mask, dim=1)
+        return mean_output
+
+    def get_init_embeddings(self, input_ids):
+        embeds_init = self.bert.embeddings.word_embeddings(input_ids)
+        return embeds_init
+
+    def input_with_embeds(self, inputs_embeds, attention_mask):
+        bert_output = self.bert.forward(inputs_embeds=inputs_embeds, attention_mask=attention_mask)
         attention_mask = attention_mask.unsqueeze(-1)
         mean_output = torch.sum(bert_output[0]*attention_mask, dim=1) / torch.sum(attention_mask, dim=1)
         return mean_output

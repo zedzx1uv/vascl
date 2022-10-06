@@ -1,5 +1,5 @@
   # CUDA_VISIBLE_DEVICES=1
-  nohup python main.py \
+python main.py \
    --resdir ../results/vascl/  \
    --devset sts-b \
    --path_sts_data /media/rao/Disk-1/home/zb/SimCSE/SentEval/data \
@@ -10,14 +10,13 @@
    --bert bertbase \
    --lr 5e-06 \
    --lr_scale 100000 \
-   --batch_size 256 \
+   --batch_size 128 \
    --epochs 5 \
    --logging_step 200 \
-   --seed 0 \
+   --seed 3407 \
    --gpuid 0 1 \
-   --advk 50 \
-   --eps 1 \
-   --xi 1 &
+   --advk 30 \
+   --freelb 
 
 
    # text1=text2, forwarding the same instance twice

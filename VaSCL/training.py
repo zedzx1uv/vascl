@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from learners.contrastive_utils import ContrastiveLoss, VaSCL_NUniDir, VaSCL_NBiDir
-from learners.vat_utils import VaSCL_Pturb
+from learners.vat_utils import VaSCL_Pturb, FreeLB 
 from utils.utils import statistics_log
 
 # Set PATHs
@@ -28,13 +28,18 @@ class VaSCL_Trainer(nn.Module):
         self.xi = self.args.xi 
         self.advk = self.args.advk 
         self.topk = self.args.topk
-        
+
+        self.adv_lr = self.args.adv_lr
+        self.adv_max_norm = self.args.adv_max_norm
+        self.adv_init_mag = self.args.adv_init_mag
+        self.adv_norm_type = self.args.adv_norm_type
+        self.freelb = self.args.freelb 
         self.paircon_loss = ContrastiveLoss(temperature=self.temperature, topk=self.topk).cuda()
         
         self.uni_criterion = VaSCL_NUniDir(temperature=self.temperature).cuda()
         self.bi_criterion = VaSCL_NBiDir(temperature=self.temperature).cuda()
         self.perturb_embd = VaSCL_Pturb(xi=self.xi, eps=self.eps, ip=self.advk, uni_criterion=self.uni_criterion, bi_criterion=self.bi_criterion).cuda()
-        
+
         self.gstep = 0
         self.dev_objective = -np.inf
         print(f"\nInitializing VaSCL_Trainer \n")
@@ -83,7 +88,11 @@ class VaSCL_Trainer(nn.Module):
 
                 input_ids, attention_mask = self.prepare_pairwise_input(batch)
                 
-                losses = self.train_step(input_ids, attention_mask)
+
+                if self.freelb:
+                    losses = self.freelb_train_step(input_ids, attention_mask)
+                else:
+                    losses = self.train_step(input_ids, attention_mask)
                 
                 if (self.gstep%self.args.logging_step==0) or (self.gstep==all_iter) or (self.gstep==self.args.max_iter):
 
@@ -122,10 +131,71 @@ class VaSCL_Trainer(nn.Module):
             losses['optimized_loss'] = loss
             
         loss.backward()
+
         self.optimizer.step()
         self.optimizer.zero_grad()
         return losses
-    
+
+    def freelb_train_step(self, input_ids, attention_mask):
+
+        embeddings, _, feat1, feat2 = self.model(input_ids, attention_mask, topk=self.topk)
+        losses = self.paircon_loss(feat1, feat2)
+        loss = losses['loss']
+        losses['vcl_loss'] = loss.item()
+
+        input_ids_1, input_ids_2 = torch.unbind(input_ids, dim=1)
+        attention_mask_1, attention_mask_2 = torch.unbind(attention_mask, dim=1) 
+
+        embeds_init_1 = self.model.module.get_init_embeddings(input_ids_1)
+        embeds_init_2 = self.model.module.get_init_embeddings(input_ids_2)
+        if self.adv_init_mag > 0:
+            input_mask = attention_mask_1.to(embeds_init_1)
+            input_lengths = torch.sum(input_mask, 1)
+            if self.adv_norm_type == "l2":
+                delta = torch.zeros_like(embeds_init_1).uniform_(-1, 1) * input_mask.unsqueeze(2)
+                dims = input_lengths * embeds_init_1.size(-1)
+                mag = self.adv_init_mag / torch.sqrt(dims)
+                delta = (delta * mag.view(-1, 1, 1)).detach()
+            elif self.adv_norm_type == "linf":
+                delta = torch.zeros_like(embeds_init_1).uniform_(-self.adv_init_mag, self.adv_init_mag)
+                delta = delta * input_mask.unsqueeze(2)
+        else:
+            delta = torch.zeros_like(embeds_init_1)
+        
+        for astep in range(self.advk):
+            delta.requires_grad_()
+            inputs_embeds_1 = delta + embeds_init_1
+            inputs_embeds_2 = embeds_init_2
+            feat1, feat2 = self.model((inputs_embeds_1,inputs_embeds_2),(attention_mask_1, attention_mask_2),freelb=True)
+            losses = self.paircon_loss(feat1, feat2)
+            loss = losses['loss']
+            loss = loss.mean()
+            losses['adv_loss'] = loss.item()
+            loss.backward()
+            delta_grad = delta.grad.clone().detach()
+            if self.adv_norm_type == "l2":
+                denorm = torch.norm(delta_grad.view(delta_grad.size(0), -1), dim=1).view(-1, 1, 1)
+                denorm = torch.clamp(denorm, min=1e-8)
+                delta = (delta + self.adv_lr * delta_grad / denorm).detach()
+                if self.adv_max_norm > 0:
+                    delta_norm = torch.norm(delta.view(delta.size(0), -1).float(), p=2, dim=1).detach()
+                    exceed_mask = (delta_norm > self.adv_max_norm).to(embeds_init_1)
+                    reweights = (self.adv_max_norm / delta_norm * exceed_mask + (1 - exceed_mask)).view(-1, 1, 1)
+                    delta = (delta * reweights).detach()
+            elif self.adv_norm_type == "linf":
+                denorm = torch.norm(delta_grad.view(delta_grad.size(0), -1), dim=1, p=float("inf")).view(-1, 1, 1)
+                denorm = torch.clamp(denorm, min=1e-8)
+                delta = (delta + self.adv_lr * delta_grad / denorm).detach()
+                if self.adv_max_norm > 0:
+                    delta = torch.clamp(delta, -self.adv_max_norm, self.adv_max_norm).detach()
+            else:
+                raise ValueError("Norm type {} not specified.".format(self.adv_norm_type))
+            embeds_init_1 = self.model.module.get_init_embeddings(input_ids_1)
+            embeds_init_2 = self.model.module.get_init_embeddings(input_ids_2)
+
+        self.optimizer.step()
+        self.optimizer.zero_grad()
+        return losses
 
     def eval_stsdev(self):
     

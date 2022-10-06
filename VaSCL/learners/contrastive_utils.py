@@ -65,7 +65,7 @@ class VaSCL_NBiDir(nn.Module):
         mask = torch.eye(batch_size, dtype=torch.bool).to(device)
         mask = mask.repeat(2, 2)
         mask = ~mask
-         
+        
         pos = torch.exp(torch.sum(features_1*features_2, dim=-1) / self.temperature)
         pos = torch.cat([pos, pos], dim=0)
         neg = torch.exp(torch.mm(features, features.t().contiguous()) / self.temperature)
