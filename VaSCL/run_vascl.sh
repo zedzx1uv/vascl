@@ -15,7 +15,7 @@ python main.py \
    --logging_step 500 \
    --seed 3407 \
    --gpuid 0 1 \
-   --advk 10 \
+   --advk 3 \
    --freelb 
 
 

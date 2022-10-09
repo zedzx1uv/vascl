@@ -75,7 +75,7 @@ def get_args(argv):
     parser.add_argument('--eps', type=float, default=0, help=" ")
     parser.add_argument('--xi', type=int, default=1, help=" ")
     parser.add_argument('--advk', type=int, default=1, help=" ")
-    parser.add_argument('--adv_lr', type=float, default=1e-2)
+    parser.add_argument('--adv_lr', type=float, default=1e-1)
     parser.add_argument('--adv_init_mag', type=float, default=2e-2)
     parser.add_argument('--adv_norm_type', type=str, default="l2", choices=["l2", "linf"])
     parser.add_argument('--adv_max_norm', type=float, default=0, help="set to 0 to be unlimited")

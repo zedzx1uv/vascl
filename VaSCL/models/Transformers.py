@@ -26,15 +26,15 @@ class VaSCL_RoBERTa(RobertaPreTrainedModel):
             
             mean_output_1 = self.get_mean_embeddings(input_ids_1, attention_mask_1)
             mean_output_2 = self.get_mean_embeddings(input_ids_2, attention_mask_2)
-            inner_prod = torch.mm(mean_output_1, mean_output_1.t().contiguous())
+            # inner_prod = torch.mm(mean_output_1, mean_output_1.t().contiguous())
 
             # estimate the neighborhood of input example
-            batch_size = input_ids.shape[0]
-            mask = torch.eye(batch_size, dtype=torch.bool).to(mean_output_1.device)
-            inner_prod_neg = inner_prod.masked_select(~mask).view(batch_size, -1)
-            topk_inner, hard_indices = torch.topk(inner_prod_neg, k=topk, dim=-1)
+            # batch_size = input_ids.shape[0]
+            # mask = torch.eye(batch_size, dtype=torch.bool).to(mean_output_1.device)
+            # inner_prod_neg = inner_prod.masked_select(~mask).view(batch_size, -1)
+            # topk_inner, hard_indices = torch.topk(inner_prod_neg, k=topk, dim=-1)
             # print(f"\n embeddings:{mean_output_1.size()}\t inner_prod:{inner_prod_neg.size()}\t topk_inner:{topk_inner.size()}\t{hard_indices.size()}\n")
-
+            hard_indices = None 
             cnst_feat1, cnst_feat2 = self.contrast_logits(mean_output_1, mean_output_2)
             return mean_output_1, hard_indices, cnst_feat1, cnst_feat2
         else:
@@ -95,14 +95,14 @@ class VaSCL_BERT(BertPreTrainedModel):
 
             mean_output_1 = self.get_mean_embeddings(input_ids_1, attention_mask_1)
             mean_output_2 = self.get_mean_embeddings(input_ids_2, attention_mask_2)
-            inner_prod = torch.mm(mean_output_1, mean_output_1.t().contiguous())
+            # inner_prod = torch.mm(mean_output_1, mean_output_1.t().contiguous())
 
             # estimate the neighborhood of input example
-            batch_size = input_ids.shape[0]
-            mask = torch.eye(batch_size, dtype=torch.bool).to(mean_output_1.device)
-            inner_prod_neg = inner_prod.masked_select(~mask).view(batch_size, -1)
-            topk_inner, hard_indices_unidir = torch.topk(inner_prod_neg, k=topk, dim=-1)
-
+            # batch_size = input_ids.shape[0]
+            # mask = torch.eye(batch_size, dtype=torch.bool).to(mean_output_1.device)
+            # inner_prod_neg = inner_prod.masked_select(~mask).view(batch_size, -1)
+            # topk_inner, hard_indices_unidir = torch.topk(inner_prod_neg, k=topk, dim=-1)
+            hard_indices_unidir = None 
             cnst_feat1, cnst_feat2 = self.contrast_logits(mean_output_1, mean_output_2)
             return mean_output_1, hard_indices_unidir, cnst_feat1, cnst_feat2
         else:
